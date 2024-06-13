@@ -21,7 +21,7 @@ import requests
 def requestGet(api_key: str, bt: str, resourceId: str):
     """Retrieve data from an API using REST GET."""
     response = requests.get(
-        f"https://freki-staging.tinvio.dev/api/v1/{bt}/{resourceId}",
+        f"https://api.getjaz.com/api/v1/{bt}/{resourceId}",
         headers={"API_KEY": api_key},
     )
     return response.json()
@@ -29,16 +29,15 @@ def requestGet(api_key: str, bt: str, resourceId: str):
 def requestList(api_key: str, bt: str):
     """Retrieve a list of data from an API using REST GET."""
     response = requests.get(
-        f"https://freki-staging.tinvio.dev/api/v1/{bt}",
+        f"https://api.getjaz.com/api/v1/{bt}",
         headers={"API_KEY": api_key},
     )
     return response.json()
 
 def requestPost(api_key: str, bt: str, payload: str):
     """Retrieve data from an API using REST POST with payload."""
-    print(f"requestPayload: {payload}")
     response = requests.post(
-        f"https://freki-staging.tinvio.dev/api/v1/{bt}",
+        f"https://api.getjaz.com/api/v1/{bt}",
         headers={"API_KEY": api_key},
         json=payload,
     )
@@ -601,21 +600,21 @@ class FrekiToolNode:
                 case "CreateInvoice":
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "invoices", tool_call["args"])
-                    print(f"CreateInvoice Resp: {output}")
+                    #print(f"CreateInvoice Resp: {output}")
                     outoput = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateBill":
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "bills", tool_call["args"])
-                    print(f"CreateInvoice Resp: {output}")
+                    #print(f"CreateInvoice Resp: {output}")
                     outoput = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateJournal":
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "journals", tool_call["args"])
-                    print(f"CreateInvoice Resp: {output}")
+                    #print(f"CreateInvoice Resp: {output}")
                     outoput = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
