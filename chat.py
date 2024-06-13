@@ -1,11 +1,19 @@
 from langchain_google_vertexai import ChatVertexAI
 import streamlit as st
-import os
+import base64
+import json
+from google.oauth2 import service_account
 
-os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
+credentials = service_account.Credentials.from_service_account_info(credentials_dict)
 
-#llm = ChatVertexAI(model="gemini-1.5-pro")
-llm = ChatVertexAI(model="gemini-1.5-pro:generateContent")
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8')
+
+llm = ChatVertexAI(
+    model="gemini-1.5-pro",
+    project="jaz-ai-421316",
+    credentials=credentials,
+)
 
 #####################################################
 from langchain_core.tools import tool
