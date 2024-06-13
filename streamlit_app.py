@@ -47,10 +47,15 @@ if prompt := st.chat_input():
         messages = convert_to_langchain()
         print(messages)
 
-        for event in graph.stream({"messages": messages}, {"recursion_limit": 25, "max_concurrency": 10}):
-            print(event)
-            if "chatbot" in event:
-                for msg in event["chatbot"]["messages"]:
-                    if msg.content != "":
-                        st.session_state.messages.append({"role": "assistant", "content": msg.content})
-                        st.chat_message("assistant").write(msg.content)
+        try:
+            for event in graph.stream({"messages": messages}, {"recursion_limit": 25, "max_concurrency": 10}):
+                print(event)
+                if "chatbot" in event:
+                    for msg in event["chatbot"]["messages"]:
+                        if msg.content != "":
+                            st.session_state.messages.append({"role": "assistant", "content": msg.content})
+                            st.chat_message("assistant").write(msg.content)
+        except Exception as e:
+            st.session_state.messages.append({"role": "assistant", "content": f"Error: {e}"})
+            st.chat_message("assistant").write(f"Error: {e}")
+            raise e 
