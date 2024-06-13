@@ -1,15 +1,17 @@
 from langchain_google_vertexai import ChatVertexAI
-import streamlit as st
-import base64
 import json
-from google.oauth2 import service_account
+import os
+import tempfile
+import base64
 
+temp_file_path = ""
 
-#def vertex_init(secrets: str) -> str:
-#    credentials_dict = json.loads(base64.b64decode(secrets).decode('utf-8'))
-#    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-#    vertexai.init(project="jaz-ai-421316", location="us-central1", credentials=credentials)
-#    return credentials
+with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+    temp_file.write(base64.b64decode(os.environ["GOOGLE_JSON"]))
+    temp_file_path = temp_file.name
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
+
 
 #####################################################
 from langchain_core.tools import tool
@@ -676,10 +678,8 @@ tools = [
     CreateJournal, ListJournals
 ]
 
-def start_llm_chat(api_key: str, google_secrets: str):
-    credentials_dict = json.loads(base64.b64decode(google_secrets).decode('utf-8'))
-    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-    llm = ChatVertexAI(model="gemini-1.5-pro", credentials=credentials)
+def start_llm_chat(api_key: str):
+    llm = ChatVertexAI(model="gemini-1.5-pro")
     llm_with_tools = llm.bind_tools(tools)
 
     def chatbot(state: State):

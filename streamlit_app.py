@@ -1,14 +1,6 @@
 import streamlit as st
-import json
-import base64
-from google.oauth2 import service_account
-import vertexai
-
-credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
-credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-vertexai.init(project="jaz-ai-421316", location="us-central1", credentials=credentials)
-
 from chat import start_llm_chat
+import os
 
 FREKI_URL="https://freki-staging.tinvio.dev"
 
@@ -39,7 +31,7 @@ with st.sidebar:
     st.subheader("AI Interface for Jaz")
     st.text_input('API_KEY', key="api_key")
 
-graph = start_llm_chat(st.session_state.api_key, st.secrets["GOOGLE_JSON"])
+graph = start_llm_chat(st.session_state.api_key)
 
 if prompt := st.chat_input():
     if not st.session_state.api_key:
