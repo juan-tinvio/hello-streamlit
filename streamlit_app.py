@@ -1,4 +1,13 @@
 import streamlit as st
+import json
+import base64
+from google.oauth2 import service_account
+import vertexai
+
+credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
+credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+vertexai.init(project="jaz-ai-421316", location="us-central1", credentials=credentials)
+
 from chat import start_llm_chat
 
 FREKI_URL="https://freki-staging.tinvio.dev"

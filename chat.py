@@ -4,10 +4,12 @@ import base64
 import json
 from google.oauth2 import service_account
 
-def get_llm(secrets: str):
-    credentials_dict = json.loads(base64.b64decode(secrets).decode('utf-8'))
-    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-    return ChatVertexAI(model="gemini-1.5-pro", credentials=credentials)
+
+#def vertex_init(secrets: str) -> str:
+#    credentials_dict = json.loads(base64.b64decode(secrets).decode('utf-8'))
+#    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+#    vertexai.init(project="jaz-ai-421316", location="us-central1", credentials=credentials)
+#    return credentials
 
 #####################################################
 from langchain_core.tools import tool
@@ -675,7 +677,9 @@ tools = [
 ]
 
 def start_llm_chat(api_key: str, google_secrets: str):
-    llm = get_llm(google_secrets)
+    credentials_dict = json.loads(base64.b64decode(google_secrets).decode('utf-8'))
+    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+    llm = ChatVertexAI(model="gemini-1.5-pro", credentials=credentials)
     llm_with_tools = llm.bind_tools(tools)
 
     def chatbot(state: State):
