@@ -1,4 +1,8 @@
 from langchain_google_vertexai import ChatVertexAI
+import streamlit as st
+import os
+
+os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 llm = ChatVertexAI(model="gemini-1.5-pro")
 
