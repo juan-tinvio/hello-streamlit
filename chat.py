@@ -4,15 +4,10 @@ import base64
 import json
 from google.oauth2 import service_account
 
-credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
-st.write(credentials_dict["project_id"])
-credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-
-llm = ChatVertexAI(
-    model="gemini-1.5-pro",
-    project="jaz-ai-421316",
-    credentials=credentials,
-)
+def get_llm():
+    credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
+    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+    return ChatVertexAI(model="gemini-1.5-pro", credentials=credentials)
 
 #####################################################
 from langchain_core.tools import tool
@@ -678,12 +673,14 @@ tools = [
     ListBills, ListChartOfAccounts, ListTaxProfiles,
     CreateJournal, ListJournals
 ]
-llm_with_tools = llm.bind_tools(tools)
-
-def chatbot(state: State):
-    return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 def start_llm_chat(api_key: str):
+    llm = get_llm()
+    llm_with_tools = llm.bind_tools(tools)
+
+    def chatbot(state: State):
+        return {"messages": [llm_with_tools.invoke(state["messages"])]}
+
     tool_node = FrekiToolNode(api_key)
     graph_builder = StateGraph(State)
     graph_builder.add_node("chatbot", chatbot)
