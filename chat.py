@@ -6,7 +6,7 @@ os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 #llm = ChatVertexAI(model="gemini-1.5-pro")
 llm = ChatVertexAI(
-    model="gemini-1.5-flash-latest",
+    model="gemini-1.5-pro",
     api_key=st.secrets["GOOGLE_API_KEY"],
 )
 
