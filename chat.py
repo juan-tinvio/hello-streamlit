@@ -5,9 +5,8 @@ import json
 from google.oauth2 import service_account
 
 credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
+st.write(credentials_dict["project_id"])
 credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-
-#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8')
 
 llm = ChatVertexAI(
     model="gemini-1.5-pro",
