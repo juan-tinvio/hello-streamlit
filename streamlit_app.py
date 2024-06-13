@@ -30,7 +30,7 @@ with st.sidebar:
     st.subheader("AI Interface for Jaz")
     st.text_input('API_KEY', key="api_key")
 
-graph = start_llm_chat(st.session_state.api_key)
+graph = start_llm_chat(st.session_state.api_key, st.secrets["GOOGLE_JSON"])
 
 if prompt := st.chat_input():
     if not st.session_state.api_key:

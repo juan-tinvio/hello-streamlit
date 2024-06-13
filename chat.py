@@ -4,8 +4,8 @@ import base64
 import json
 from google.oauth2 import service_account
 
-def get_llm():
-    credentials_dict = json.loads(base64.b64decode(st.secrets["GOOGLE_JSON"]).decode('utf-8'))
+def get_llm(secrets: str):
+    credentials_dict = json.loads(base64.b64decode(secrets).decode('utf-8'))
     credentials = service_account.Credentials.from_service_account_info(credentials_dict)
     return ChatVertexAI(model="gemini-1.5-pro", credentials=credentials)
 
@@ -674,8 +674,8 @@ tools = [
     CreateJournal, ListJournals
 ]
 
-def start_llm_chat(api_key: str):
-    llm = get_llm()
+def start_llm_chat(api_key: str, google_secrets: str):
+    llm = get_llm(google_secrets)
     llm_with_tools = llm.bind_tools(tools)
 
     def chatbot(state: State):
