@@ -5,7 +5,6 @@ import os
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 llm = ChatVertexAI(model="gemini-1.5-pro")
-st.write(os.environ["GOOGLE_API_KEY"][1:5])
 
 #####################################################
 from langchain_core.tools import tool
