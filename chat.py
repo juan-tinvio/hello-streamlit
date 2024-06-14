@@ -464,11 +464,11 @@ class CreateBTLineItem(BaseModel):
         }
     ###
     """
-    discount: float = Field(None, description="Line item discount, float format")
+    discount: float = Field(None, description="Line item discount, must be in decimal format")
     name: str = Field(..., description="Line item name, string format")
     unit: str = Field(None, description="Line item unit, string format")
-    unitPrice: float = Field(None, description="Line item unit price, float format")
-    quantity: float = Field(None, description="Line item quantity, float format")
+    unitPrice: float = Field(None, description="Line item unit price, must be in decimal format")
+    quantity: float = Field(None, description="Line item quantity, must be in decimal format")
     accountResourceId: str = Field(None, description="Line item chart of account resourceId, type uuidv4")
     taxProfileResourceId: str = Field(None, description="Line item tax profile resourceId, type uuidv4")
 
@@ -504,8 +504,8 @@ class CreateInvoice(BaseModel):
     }
     ###
     """
-    reference: str = Field(..., description="Invoice reference, string format")
-    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds integer format")
+    reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
+    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is a mandatory field, integer format")
     tags: list[str] = Field(None, description="Invoice tags, array of strings format")
     terms: int = Field(None, description="Invoice tags, must be one: 0,7,15,30,45,60")
     invoiceNotes: str = Field(None, description="Invoice notes, string format")
@@ -535,9 +535,9 @@ class CreateJournalEntry(BaseModel):
     """
     accountResourceId: str = Field(..., description="Journal Entry accountResourceId, this is mandatory field, uuidv4 format")
     description: str = Field(None, description="Journal Entry description, string format")
-    amount: float = Field(..., description="Journal Entry amount, this is mandatory field, float format")
+    amount: float = Field(..., description="Journal Entry amount, this is mandatory field, must be in decimal format")
     type: str = Field(..., description="Journal Entry type, this is mandatory field, can be: CREDIT or DEBIT, string format")
-    exchangeRate: float = Field(None, description="Journal Entry exchange rate, float format")
+    exchangeRate: float = Field(None, description="Journal Entry exchange rate, must be in decimal format")
     taxProfileResourceId: str = Field(None, description="Journal Entry taxResourceId, uuidv4 format")
 
 class CreateJournal(BaseModel):
@@ -570,10 +570,10 @@ class CreateJournal(BaseModel):
     }
     ###
     """
-    reference: str = Field(..., description="Invoice reference, string format")
-    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds integer format")
+    reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
+    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is mandatory field, integer format")
     tags: list[str] = Field(None, description="Invoice tags, array of strings format")
-    contactResourceId: str = Field(None, description="The contact resource id, uuidv4 format type")
+    contactResourceId: str = Field(None, description="The contact resource id, retrieve the contactResourceId using 'ListJournals', uuidv4 format type")
     internalNotes: str = Field(None, description="Invoice internal notes, string format")
     saveAsDraft: bool = Field(..., description="Save the Invoice as a draft?, this is mandatory and required, default is true, boolean type")
     taxInclusion: bool = Field(None, description="Include Tax for Journal, boolean type")
