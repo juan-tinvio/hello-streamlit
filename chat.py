@@ -472,6 +472,49 @@ class CreateBTLineItem(BaseModel):
     accountResourceId: str = Field(None, description="Line item chart of account resourceId, type uuidv4")
     taxProfileResourceId: str = Field(None, description="Line item tax profile resourceId, type uuidv4")
 
+class CreateBill(BaseModel):
+    """Create an Bill.
+
+    If successful please respond with the reference.
+
+    Example (delimiters are ###)
+    ###
+    {
+    "reference": "api test 47",
+    "valueDate": 1685509673000,
+    "contactResourceId": "81f0534a-78d4-4c9f-825d-c9c29f761e52",
+    "terms": 60,
+    "internalNotes": "foo",
+    "invoiceNotes": "bar",
+    "lineItems": [
+        {
+            "name": "First Item",
+            "quantity": 1,
+            "unit": "dollars",
+            "unitPrice": 10.0
+        },
+        {
+            "name": "Second Item",
+            "quantity": 1,
+            "unit": "dollars",
+            "unitPrice": 10.0
+        }
+    ],
+    "saveAsDraft": true
+    }
+    ###
+    """
+    reference: str = Field(..., description="Bill reference, this is a mandatory field, string format")
+    valueDate: int = Field(..., description="Bill value Date in epoch milliseconds, this is a mandatory field, integer format")
+    dueDate: int = Field(..., description="Bill dueDate Date in epoch milliseconds, integer format")
+    terms: int = Field(..., description="Bill terms, each term is how many days until due date, must be one: 0,7,15,30,45,60")
+    tags: list[str] = Field(None, description="Bill tags, array of strings format")
+    invoiceNotes: str = Field(None, description="Bill notes, string format")
+    internalNotes: str = Field(None, description="Bill internal notes, string format")
+    lineItems: list[CreateBTLineItem] = Field(None, description="Bill Line Items, array of objects format")
+    saveAsDraft: bool = Field(..., description="Save the Bill as a draft?, this is mandatory and required, default is true, boolean type")
+    contactResourceId: str = Field(None, description="The contact resource id, uuidv4 format type")
+
 class CreateInvoice(BaseModel):
     """Create an Invoice.
 
@@ -506,8 +549,9 @@ class CreateInvoice(BaseModel):
     """
     reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
     valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is a mandatory field, integer format")
+    dueDate: int = Field(..., description="Invoice dueDate Date in epoch milliseconds, integer format")
+    terms: int = Field(..., description="Invoice terms, each term is how many days until due date, must be one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Invoice tags, array of strings format")
-    terms: int = Field(None, description="Invoice tags, must be one: 0,7,15,30,45,60")
     invoiceNotes: str = Field(None, description="Invoice notes, string format")
     internalNotes: str = Field(None, description="Invoice internal notes, string format")
     lineItems: list[CreateBTLineItem] = Field(None, description="Invoice Line Items, array of objects format")
@@ -570,12 +614,13 @@ class CreateJournal(BaseModel):
     }
     ###
     """
-    reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
-    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is mandatory field, integer format")
-    tags: list[str] = Field(None, description="Invoice tags, array of strings format")
+    reference: str = Field(..., description="Journal reference, this is a mandatory field, string format")
+    valueDate: int = Field(..., description="Journal value Date in epoch milliseconds, this is mandatory field, integer format")
+    dueDate: int = Field(..., description="Journal dueDate Date in epoch milliseconds, integer format")
+    tags: list[str] = Field(None, description="Journal tags, array of strings format")
     contactResourceId: str = Field(None, description="The contact resource id, retrieve the contactResourceId using 'ListJournals', uuidv4 format type")
-    internalNotes: str = Field(None, description="Invoice internal notes, string format")
-    saveAsDraft: bool = Field(..., description="Save the Invoice as a draft?, this is mandatory and required, default is true, boolean type")
+    internalNotes: str = Field(None, description="Journal internal notes, string format")
+    saveAsDraft: bool = Field(..., description="Save the Journal as a draft?, this is mandatory and required, default is true, boolean type")
     taxInclusion: bool = Field(None, description="Include Tax for Journal, boolean type")
     taxVatApplicable: bool = Field(None, description="Is Tax Applicable in Journal? boolean type")
     journalEntries: list[CreateJournalEntry] = Field(..., description="Journal Entries json array, this is this is mandatory and minimum 2 entries required, one must be CREDIT and the other DEBIT, format array")
@@ -683,7 +728,7 @@ class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
 
 tools = [
-    CreateInvoice, GetInvoice, ListContacts, ListInvoices,
+    CreateInvoice, CreateBill, GetInvoice, ListContacts, ListInvoices,
     ListBills, ListChartOfAccounts, ListTaxProfiles,
     CreateJournal, ListJournals
 ]
