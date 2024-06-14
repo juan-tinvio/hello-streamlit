@@ -601,21 +601,24 @@ class FrekiToolNode:
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "invoices", tool_call["args"])
                     #print(f"CreateInvoice Resp: {output}")
-                    outoput = output["data"]
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateBill":
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "bills", tool_call["args"])
                     #print(f"CreateInvoice Resp: {output}")
-                    outoput = output["data"]
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateJournal":
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "journals", tool_call["args"])
                     #print(f"CreateInvoice Resp: {output}")
-                    outoput = output["data"]
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "GetInvoice":
@@ -660,6 +663,14 @@ class FrekiToolNode:
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"])) 
         return {"messages": outputs}
+#####################################################
+
+system_message = """
+You a helpful assistant accountant.
+Please help the user with their accounting needs.
+Never respond with uuidv4 values, always use reference or name instead.
+"""
+
 #####################################################
 
 from langgraph.prebuilt import ToolNode, tools_condition

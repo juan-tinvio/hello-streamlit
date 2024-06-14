@@ -1,5 +1,5 @@
 import streamlit as st
-from chat import start_llm_chat
+from chat import start_llm_chat, system_message
 import os
 
 FREKI_URL="https://freki-staging.tinvio.dev"
@@ -11,7 +11,7 @@ if "api_key" not in st.session_state:
 
 # Initialize the LangChain messages
 def convert_to_langchain() -> list[tuple[str, str]]:
-    msg = [("system", "You a helpful assistant accountant.")]
+    msg = [("system", system_message)]
     for m in st.session_state.messages[2:]:
         msg.append((m["role"], m["content"]))
     return msg
