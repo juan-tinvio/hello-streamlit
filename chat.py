@@ -36,6 +36,7 @@ def requestList(api_key: str, bt: str):
 
 def requestPost(api_key: str, bt: str, payload: str):
     """Retrieve data from an API using REST POST with payload."""
+    print(f"*****\nPayload: {payload}\n******")
     response = requests.post(
         f"https://api.getjaz.com/api/v1/{bt}",
         headers={"API_KEY": api_key},
@@ -450,6 +451,11 @@ class GetInvoice(BaseModel):
 class CreateBTLineItem(BaseModel):
     """Define a Line Item JSON structure.
 
+    Lookup the accountResourceId by retrieving the list of chart of accounts using the 'ListChartOfAccounts' function.
+    Lookup the taxProfileResourceId by retriving the list of tax profiles using the 'ListTaxProfiles' function.
+
+    accountResourceId is a mandatory field if is not a draft.
+
     Example (delimiters are ###)
     ###
         {
@@ -469,7 +475,7 @@ class CreateBTLineItem(BaseModel):
     unit: str = Field(None, description="Line item unit, string format")
     unitPrice: float = Field(None, description="Line item unit price, must be in decimal format")
     quantity: float = Field(None, description="Line item quantity, must be in decimal format")
-    accountResourceId: str = Field(None, description="Line item chart of account resourceId, type uuidv4")
+    accountResourceId: str = Field(None, description="Line item chart of account resourceId, is a mandatory field if not a draft, type uuidv4")
     taxProfileResourceId: str = Field(None, description="Line item tax profile resourceId, type uuidv4")
 
 class CreateBill(BaseModel):
@@ -507,7 +513,7 @@ class CreateBill(BaseModel):
     reference: str = Field(..., description="Bill reference, this is a mandatory field, string format")
     valueDate: int = Field(..., description="Bill value Date in epoch milliseconds, this is a mandatory field, integer format")
     dueDate: int = Field(..., description="Bill dueDate Date in epoch milliseconds, integer format")
-    terms: int = Field(..., description="Bill terms, each term is how many days until due date, must be one: 0,7,15,30,45,60")
+    terms: int = Field(..., description="Bill terms, each term is how many days until due date, must be an integer of one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Bill tags, array of strings format")
     invoiceNotes: str = Field(None, description="Bill notes, string format")
     internalNotes: str = Field(None, description="Bill internal notes, string format")
@@ -550,12 +556,12 @@ class CreateInvoice(BaseModel):
     reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
     valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is a mandatory field, integer format")
     dueDate: int = Field(..., description="Invoice dueDate Date in epoch milliseconds, integer format")
-    terms: int = Field(..., description="Invoice terms, each term is how many days until due date, must be one: 0,7,15,30,45,60")
+    terms: int = Field(..., description="Invoice terms, each term is how many days until due date, must be an integer of one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Invoice tags, array of strings format")
     invoiceNotes: str = Field(None, description="Invoice notes, string format")
     internalNotes: str = Field(None, description="Invoice internal notes, string format")
     lineItems: list[CreateBTLineItem] = Field(None, description="Invoice Line Items, array of objects format")
-    saveAsDraft: bool = Field(..., description="Save the Invoice as a draft?, this is mandatory and required, default is true, boolean type")
+    saveAsDraft: bool = Field(..., description="Save the Invoice as a draft?, this is mandatory and required, default value is true, boolean type")
     contactResourceId: str = Field(None, description="The contact resource id, uuidv4 format type")
 
 
@@ -564,6 +570,8 @@ class CreateJournalEntry(BaseModel):
 
     Lookup the accountResourceId by retrieving the list of chart of accounts using the 'ListChartOfAccounts' function.
     Lookup the taxProfileResourceId by retriving the list of tax profiles using the 'ListTaxProfiles' function.
+
+    accountResourceId is a mandatory field if the Journal Entry is not a draft.
 
     Example (delimiters are ###)
     ###
@@ -577,7 +585,7 @@ class CreateJournalEntry(BaseModel):
         }
     ###
     """
-    accountResourceId: str = Field(..., description="Journal Entry accountResourceId, this is mandatory field, uuidv4 format")
+    accountResourceId: str = Field(..., description="Journal Entry accountResourceId, this is mandatory field if its not a draft, uuidv4 format")
     description: str = Field(None, description="Journal Entry description, string format")
     amount: float = Field(..., description="Journal Entry amount, this is mandatory field, must be in decimal format")
     type: str = Field(..., description="Journal Entry type, this is mandatory field, can be: CREDIT or DEBIT, string format")
@@ -620,7 +628,7 @@ class CreateJournal(BaseModel):
     tags: list[str] = Field(None, description="Journal tags, array of strings format")
     contactResourceId: str = Field(None, description="The contact resource id, retrieve the contactResourceId using 'ListJournals', uuidv4 format type")
     internalNotes: str = Field(None, description="Journal internal notes, string format")
-    saveAsDraft: bool = Field(..., description="Save the Journal as a draft?, this is mandatory and required, default is true, boolean type")
+    saveAsDraft: bool = Field(..., description="Save the Journal as a draft?, this is mandatory and required, default value is true, boolean type")
     taxInclusion: bool = Field(None, description="Include Tax for Journal, boolean type")
     taxVatApplicable: bool = Field(None, description="Is Tax Applicable in Journal? boolean type")
     journalEntries: list[CreateJournalEntry] = Field(..., description="Journal Entries json array, this is this is mandatory and minimum 2 entries required, one must be CREDIT and the other DEBIT, format array")
@@ -643,6 +651,10 @@ class FrekiToolNode:
         for tool_call in message.tool_calls:
             match tool_call["name"]:
                 case "CreateInvoice":
+                    if "dueDate" in tool_call["args"]:
+                        tool_call["args"]["dueDate"] = int(tool_call["args"]["dueDate"])
+                    if "terms" in tool_call["args"]:
+                        tool_call["args"]["terms"] = int(tool_call["args"]["terms"])
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "invoices", tool_call["args"])
                     #print(f"CreateInvoice Resp: {output}")
@@ -651,6 +663,10 @@ class FrekiToolNode:
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateBill":
+                    if "terms" in tool_call["args"]:
+                        tool_call["args"]["terms"] = int(tool_call["args"]["terms"])
+                    if "dueDate" in tool_call["args"]:
+                        tool_call["args"]["dueDate"] = int(tool_call["args"]["dueDate"])
                     tool_call["args"]["valueDate"] = int(tool_call["args"]["valueDate"])
                     output = requestPost(self.api_key, "bills", tool_call["args"])
                     #print(f"CreateInvoice Resp: {output}")
@@ -714,6 +730,8 @@ system_message = """
 You a helpful assistant accountant.
 Please help the user with their accounting needs.
 Never respond with uuidv4 values, always use reference or name instead.
+If mandatory fields are missing, please respond with the missing fields.
+By default save all BTs (Invoice, Bill, Journal) as drafts.
 """
 
 #####################################################
