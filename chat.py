@@ -18,10 +18,12 @@ from langchain_core.tools import tool
 from langchain_core.pydantic_v1 import BaseModel, Field
 import requests
 
+FREKI_URL="https://api.getjaz.com"
+
 def requestGet(api_key: str, bt: str, resourceId: str):
     """Retrieve data from an API using REST GET."""
     response = requests.get(
-        f"https://api.getjaz.com/api/v1/{bt}/{resourceId}",
+        f"${FREKI_URL}/api/v1/{bt}/{resourceId}",
         headers={"API_KEY": api_key},
     )
     return response.json()
@@ -29,7 +31,7 @@ def requestGet(api_key: str, bt: str, resourceId: str):
 def requestList(api_key: str, bt: str):
     """Retrieve a list of data from an API using REST GET."""
     response = requests.get(
-        f"https://api.getjaz.com/api/v1/{bt}",
+        f"{FREKI_URL}/api/v1/{bt}",
         headers={"API_KEY": api_key},
     )
     return response.json()
@@ -38,7 +40,7 @@ def requestPost(api_key: str, bt: str, payload: str):
     """Retrieve data from an API using REST POST with payload."""
     print(f"*****\nPayload: {payload}\n******")
     response = requests.post(
-        f"https://api.getjaz.com/api/v1/{bt}",
+        f"{FREKI_URL}/api/v1/{bt}",
         headers={"API_KEY": api_key},
         json=payload,
     )
@@ -46,6 +48,11 @@ def requestPost(api_key: str, bt: str, payload: str):
 
 class ListChartOfAccounts(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Chart of Account.
+
+    Can be used to:
+      - look up a user's chart of account request
+      - look up the accountResourceId for the 'CreateBTLineItem' function.
+      - look up the accountResourceId for the 'CreateJournalEntry' function.
 
     Example JSON Response (delimiters are ###)
     ###
@@ -61,6 +68,11 @@ class ListChartOfAccounts(BaseModel):
 
 class ListTaxProfiles(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Tax Profile.
+
+    Can be used to:
+      - look up a user's tax profile request
+      - look up the taxProfileResourceId for the 'CreateBTLineItem' function.
+      - look up the taxProfileResourceId for the 'CreateJournalEntry' function.
 
     Example JSON Response (delimiters are ###)
     ###
@@ -82,6 +94,11 @@ class ListTaxProfiles(BaseModel):
 
 class ListJournals(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Journal.
+
+    Can be used to:
+      - look up a user's journal request
+      - look up the journalResourceId for the 'GetJournal' function.
+      - look up the journalResourceId for the 'CreateJournalEntry' function.
 
     Example JSON Response (delimiters are ###)
     ###
@@ -148,14 +165,24 @@ class ListJournals(BaseModel):
 class ListContacts(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Contact.
 
+    Can be used to:
+      - look up a user's contact request
+      - look up the contactResourceId for the 'CreateInvoice' function.
+      - look up the contactResourceId for the 'CreateBill' function.
+
     Example JSON Response (delimiters are ###)
     ###
-    [{"name": "John", "email": "john@example.com", "contactResourceId": "33988ec3-708f-48ad-bccb-6bbbd40d5127"}]
+    [{"name": "John", "email": "john@example.com", "contactResourceId": "33988ec3-708f-48ad-bccb-6bbbd40d5127", "customer": true, "supplier": true}]
     ###
     """
 
 class ListInvoices(BaseModel):
     """Retrives a JSON array of objects. Each object is an Invoice.
+
+    Can be used to:
+      - look up a user's invoice request
+      - look up the invoiceResourceId for the 'GetInvoice' function.
+      - look up the invoiceResourceId for the 'CreateInvoice' function.
 
     Example JSON Response (delimiters are ###)
     ###
@@ -241,6 +268,11 @@ class ListInvoices(BaseModel):
 class ListBills(BaseModel):
     """Retrives a JSON array of objects. Each object is an Bill.
 
+    Can used to:
+      - look up a user's bill request
+      - look up the billResourceId for the 'GetBill' function.
+      - look up the billResourceId for the 'CreateBill' function.
+
     Example JSON Response (delimiters are ###)
     ###
     [
@@ -289,6 +321,11 @@ class ListBills(BaseModel):
 
 class GetBill(BaseModel):
     """Retrieves a JSON object. The object is Bill data.
+
+    Can be used to:
+      - look up a user's bill request
+      - look up the billResourceId for the 'GetBill' function.
+      - look up the billResourceId for the 'CreateBill' function.
 
     Example of a successful JSON response (delimiters are ###)
     ###
@@ -353,6 +390,11 @@ class GetBill(BaseModel):
 
 class GetInvoice(BaseModel):
     """Retrieves a JSON object. The object is Invoice data.
+
+    Can be used to:
+      - look up a user's invoice request
+      - look up the invoiceResourceId for the 'GetInvoice' function.
+      - look up the invoiceResourceId for the 'CreateInvoice' function.
 
     Example of a successful JSON response (delimiters are ###)
     ###
@@ -456,6 +498,15 @@ class CreateBTLineItem(BaseModel):
 
     accountResourceId is a mandatory field if is not a draft.
 
+    When user wants to create a line item, respond with a friendly message and ask for the following fields:
+    - discount (optional)
+    - name (mandatory)
+    - quantity (mandatory)
+    - account resource id (mandatory)
+    - tax profile resource id (optional)
+    - unit (optional)
+    - unit price (mandatory)
+
     Example (delimiters are ###)
     ###
         {
@@ -480,6 +531,16 @@ class CreateBTLineItem(BaseModel):
 
 class CreateBill(BaseModel):
     """Create an Bill.
+
+    When user wants to create a bill, respond with a friendly message and ask for the following fields:
+    - reference (mandatory)
+    - value date (mandatory)
+    - due date or terms (optional)
+    - invoice notes (optional)
+    - internal notes (optional)
+    - line items (optional)
+    - save as draft (optinal, default: True)
+    - contact resource id (optional, lookup the contact resource id by retrieving the list of contacts using the 'ListContacts' function.)
 
     If successful please respond with the reference.
 
@@ -511,8 +572,8 @@ class CreateBill(BaseModel):
     ###
     """
     reference: str = Field(..., description="Bill reference, this is a mandatory field, string format")
-    valueDate: int = Field(..., description="Bill value Date in epoch milliseconds, this is a mandatory field, integer format")
-    dueDate: int = Field(..., description="Bill dueDate Date in epoch milliseconds, integer format")
+    valueDate: int = Field(..., description="Bill value Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, this is a mandatory field, integer format")
+    dueDate: int = Field(..., description="Bill dueDate Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
     terms: int = Field(..., description="Bill terms, each term is how many days until due date, must be an integer of one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Bill tags, array of strings format")
     invoiceNotes: str = Field(None, description="Bill notes, string format")
@@ -523,6 +584,16 @@ class CreateBill(BaseModel):
 
 class CreateInvoice(BaseModel):
     """Create an Invoice.
+
+    When user wants to create an invoice, respond with a friendly message and ask for the following fields:
+    - reference (mandatory)
+    - value date (mandatory)
+    - due date or terms (optional)
+    - invoice notes (optional)
+    - internal notes (optional)
+    - line items (optional)
+    - save as draft (optinal, default: True)
+    - contact resource id (optional, lookup the contact resource id by retrieving the list of contacts using the 'ListContacts' function.)
 
     If successful please respond with the reference.
 
@@ -554,8 +625,8 @@ class CreateInvoice(BaseModel):
     ###
     """
     reference: str = Field(..., description="Invoice reference, this is a mandatory field, string format")
-    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is a mandatory field, integer format")
-    dueDate: int = Field(..., description="Invoice dueDate Date in epoch milliseconds, integer format")
+    valueDate: int = Field(..., description="Invoice value Date in epoch milliseconds, this is a mandatory field, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
+    dueDate: int = Field(..., description="Invoice dueDate Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
     terms: int = Field(..., description="Invoice terms, each term is how many days until due date, must be an integer of one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Invoice tags, array of strings format")
     invoiceNotes: str = Field(None, description="Invoice notes, string format")
@@ -572,6 +643,14 @@ class CreateJournalEntry(BaseModel):
     Lookup the taxProfileResourceId by retriving the list of tax profiles using the 'ListTaxProfiles' function.
 
     accountResourceId is a mandatory field if the Journal Entry is not a draft.
+
+    When user wants to create a journal entry, respond with a friendly message and ask for the following fields:
+    - account resource id (mandatory)
+    - description (optional)
+    - amount (mandatory)
+    - type (mandatory)
+    - exchange rate (optional)
+    - tax profile resource id (optional)
 
     Example (delimiters are ###)
     ###
@@ -594,6 +673,15 @@ class CreateJournalEntry(BaseModel):
 
 class CreateJournal(BaseModel):
     """Create a Journal.
+
+    When user wants to create a journal, respond with a friendly message and ask for the following fields:
+    - reference (mandatory)
+    - value date (mandatory)
+    - journal entries (mandatory)
+    - save as draft (optinal, default: True)
+    - tax inclusion (optional)
+    - tax vat applicable (optional)
+    - contact resource id (optional, lookup the contact resource id by retrieving the list of contacts using the 'ListContacts' function.)
 
     If successful please respond with the reference.
 
@@ -623,8 +711,8 @@ class CreateJournal(BaseModel):
     ###
     """
     reference: str = Field(..., description="Journal reference, this is a mandatory field, string format")
-    valueDate: int = Field(..., description="Journal value Date in epoch milliseconds, this is mandatory field, integer format")
-    dueDate: int = Field(..., description="Journal dueDate Date in epoch milliseconds, integer format")
+    valueDate: int = Field(..., description="Journal value Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, this is mandatory field, integer format")
+    dueDate: int = Field(..., description="Journal dueDate Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
     tags: list[str] = Field(None, description="Journal tags, array of strings format")
     contactResourceId: str = Field(None, description="The contact resource id, retrieve the contactResourceId using 'ListJournals', uuidv4 format type")
     internalNotes: str = Field(None, description="Journal internal notes, string format")
@@ -698,9 +786,16 @@ class FrekiToolNode:
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListContacts":
                     output = requestList(self.api_key, "contacts")["data"]
+                    print(f"ListContacts: {output}")
                     info = []
                     for contact in output:
-                        info.append({"contactResourceId": contact["resourceId"], "name": contact["name"], "email": contact["email"]})
+                        info.append({
+                            "contactResourceId": contact["resourceId"],
+                            "name": contact["name"],
+                            "email": contact["email"],
+                            "customer": contact["customer"],
+                            "supplier": contact["supplier"],
+                        })
                     output = json.dumps(info)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListInvoices":
@@ -727,8 +822,9 @@ class FrekiToolNode:
 #####################################################
 
 system_message = """
-You a helpful assistant accountant.
+You are a helpful assistant accountant.
 Please help the user with their accounting needs.
+The user is non-tech savvy, so please provide clear bullet list of easy to follow instructions.
 Never respond with uuidv4 values, always use reference or name instead.
 If mandatory fields are missing, please respond with the missing fields.
 By default save all BTs (Invoice, Bill, Journal) as drafts.
@@ -752,7 +848,7 @@ tools = [
 ]
 
 def start_llm_chat(api_key: str):
-    llm = ChatVertexAI(model="gemini-1.5-pro")
+    llm = ChatVertexAI(model="gemini-1.5-pro", temperature=0.2)
     llm_with_tools = llm.bind_tools(tools)
 
     def chatbot(state: State):

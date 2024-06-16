@@ -2,8 +2,6 @@ import streamlit as st
 from chat import start_llm_chat, system_message
 import os
 
-FREKI_URL="https://freki-staging.tinvio.dev"
-
 if "api_key" not in st.session_state:
     st.session_state.api_key = None
 
