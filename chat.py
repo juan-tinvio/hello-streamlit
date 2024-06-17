@@ -636,6 +636,89 @@ class CreateInvoice(BaseModel):
     contactResourceId: str = Field(None, description="The contact resource id, uuidv4 format type")
 
 
+class CreateContactAddress(BaseModel):
+    """Define a contact address.
+
+    When the user wants to create a contact address, respond with a friendly message and ask for the following fields:
+    - address line 1 (mandatory)
+    - address line 2 (optional)
+    - city (optional)
+    - country (mandatory)
+    - postal code (optional)
+    - state (optional)
+
+    Example (delimiters are ###)
+    ###
+    {
+        "addressLine1": "5555 Dr.",
+        "addressLine2": "Apartment 5",
+        "city": "San Francisco",
+        "country": "US",
+        "postalCode": "94105",
+        "state": "CA"
+    }
+    ###
+    """
+    addressLine1: str = Field(..., description="Contact address line 1, this is mandatory field, string format")
+    addressLine2: str = Field(None, description="Contact address line 2, string format")
+    city: str = Field(None, description="Contact city, string format")
+    country: str = Field(..., description="Contact country, this is mandatory field, string two-letter ISO 3166_1_alpha2 format")
+    postalCode: str = Field(None, description="Contact postal code, string format")
+    state: str = Field(None, description="Contact state, string format")
+
+from typing import ClassVar
+
+class CreateContact(BaseModel):
+    """Create a new contact.
+
+    Lookup the taxId by retriving the list of tax profiles using the 'ListTaxProfiles' function.
+
+    When user wants to create a contact, respond with a friendly message and ask for the following fields:
+    - name (mandatory)
+    - email (optional)
+    - phone (optional)
+    - customer (mandatory)
+    - supplier (mandatory)
+    - taxId (optional)
+    - customer payment terms (optional)
+    - supplier payment terms (optional)
+    - currency code (optional)
+    - jaz magic autofill (optional)
+    - billing address (mandatory)
+    - shipping address (optional)
+
+    Example (delimiters are ###)
+    ###
+    {
+        "name": "Example 2",
+        "email": "example@example.com",
+        "phone": "+15555555555",
+        "customer": true,
+        "customerPaymentTerms": "NET_30",
+        "supplier": true,
+        "supplierPaymentTerms": "NET_30",
+        "currencyCode": "SGD",
+        "billingAddress": {
+            "addressLine1": "5555 Dr.",
+            "country": "US"
+        }
+    }
+    ###
+    """
+    name: str = Field(..., description="Contact name, this is mandatory field, string format")
+    email: str = Field(None, description="Contact email, string email format")
+    phone: str = Field(None, description="Contact phone number, string E.164 format")
+    customer: bool = Field(..., description="Is the contact a customer?, this is mandatory field, boolean type")
+    supplier: bool = Field(..., description="Is the contact a supplier?, this is mandatory field, boolean type")
+    taxId: str = Field(None, description="tax profile resourceId, type uuidv4")
+    customerPaymentTerms: str = Field(None, description="Customer payment terms, ON_DELVERY means now, 'NET_' prefix means how many days until due date, everything else uses CUSTOM, must be an integer of one: ON_DELIVERY, NET_7, NET_15, NET_30, NET_45, NET_60, CUSTOM")
+    supplierPaymentTerms: str = Field(None, description="Supplier payment terms, ON_DELVERY means now, 'NET_' prefix means how many days until due date, everything else uses CUSTOM, must be an integer of one: ON_DELIVERY, NET_7, NET_15, NET_30, NET_45, NET_60, CUSTOM")
+    currencyCode: str = Field(None, description="Contact currency code, string two-letter ISO 4217 format")
+    jazMagicAutofill: bool = Field(None, description="Use jaz magic to autofill? boolean format")
+    billingAddress: ClassVar[CreateContactAddress] = Field(..., description="Contact billing address, this is a mandatory field, json object format")
+    shippingAddress: list[CreateContactAddress] = Field(None, description="Contact shipping address, array of json objects format")
+
+
 class CreateJournalEntry(BaseModel):
     """Define Journal Entry JSON schema.
 
@@ -770,6 +853,13 @@ class FrekiToolNode:
                         output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
+                case "CreateContact":
+                    output = requestPost(self.api_key, "contacts", tool_call["args"])
+                    print(f"CreateInvoice Resp: {output}")
+                    if "data" in output:
+                        output = output["data"]
+                    output = json.dumps(output)
+                    outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "GetInvoice":
                     output = requestGet(self.api_key, "invoices", tool_call["args"]["resourceId"])
                     #print(f"GetInvoice: {output}")
@@ -844,7 +934,7 @@ class State(TypedDict):
 tools = [
     CreateInvoice, CreateBill, GetInvoice, ListContacts, ListInvoices,
     ListBills, ListChartOfAccounts, ListTaxProfiles,
-    CreateJournal, ListJournals
+    CreateJournal, ListJournals, CreateContact
 ]
 
 def start_llm_chat(api_key: str):
