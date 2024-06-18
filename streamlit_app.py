@@ -31,28 +31,35 @@ with st.sidebar:
 
 graph = start_llm_chat(st.session_state.api_key)
 
+#if 'waiting_for_assistant' not in st.session_state:
+#    st.session_state['waiting_for_assistant'] = False
+
 if prompt := st.chat_input():
     if not st.session_state.api_key:
         st.info("Please add your Jaz API key to continue.")
         st.stop()
-
+    
     # Clean up prompt
-    if prompt != "":
+    if prompt != "": #and not st.session_state['waiting_for_assistant']:
+        #st.session_state['waiting_for_assistant'] = True
+
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
         messages = convert_to_langchain()
-        print(messages)
+        assistant = []
 
         try:
-            for event in graph.stream({"messages": messages}, {"recursion_limit": 25, "max_concurrency": 10}):
-                print(event)
+            for event in graph.stream({"messages": messages}, {"recursion_limit": 25, "max_concurrency": 25}):
                 if "chatbot" in event:
                     for msg in event["chatbot"]["messages"]:
                         if msg.content != "":
-                            st.session_state.messages.append({"role": "assistant", "content": msg.content})
-                            st.chat_message("assistant").write(msg.content)
+                            assistant.append(msg.content)
+                            st.chat_message("assistant").markdown(msg.content)
         except Exception as e:
-            st.session_state.messages.append({"role": "assistant", "content": f"Error: {e}"})
+            assistant.append(f"Error: {e}")
             st.chat_message("assistant").write(f"Error: {e}")
             raise e 
+        finally:
+            st.session_state.messages.append({"role": "assistant", "content": ', '.join(assistant)})
+            #st.session_state['waiting_for_assistant'] = False

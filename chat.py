@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import base64
+from typing import ClassVar
 
 temp_file_path = ""
 
@@ -38,7 +39,7 @@ def requestList(api_key: str, bt: str):
 
 def requestPost(api_key: str, bt: str, payload: str):
     """Retrieve data from an API using REST POST with payload."""
-    print(f"*****\nPayload: {payload}\n******")
+    #print(f"*****\nPayload: {payload}\n******")
     response = requests.post(
         f"{FREKI_URL}/api/v1/{bt}",
         headers={"API_KEY": api_key},
@@ -666,25 +667,23 @@ class CreateContactAddress(BaseModel):
     postalCode: str = Field(None, description="Contact postal code, string format")
     state: str = Field(None, description="Contact state, string format")
 
-from typing import ClassVar
-
 class CreateContact(BaseModel):
     """Create a new contact.
 
-    Lookup the taxId by retriving the list of tax profiles using the 'ListTaxProfiles' function.
+    Lookup the taxId by retrieving the list of tax profiles using the 'ListTaxProfiles' function.
 
     When user wants to create a contact, respond with a friendly message and ask for the following fields:
     - name (mandatory)
-    - email (optional)
-    - phone (optional)
     - customer (mandatory)
     - supplier (mandatory)
+    - billing address (mandatory)
+    - email (optional)
+    - phone (optional)
     - taxId (optional)
     - customer payment terms (optional)
     - supplier payment terms (optional)
     - currency code (optional)
     - jaz magic autofill (optional)
-    - billing address (mandatory)
     - shipping address (optional)
 
     Example (delimiters are ###)
@@ -855,7 +854,7 @@ class FrekiToolNode:
                     outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
                 case "CreateContact":
                     output = requestPost(self.api_key, "contacts", tool_call["args"])
-                    print(f"CreateInvoice Resp: {output}")
+                    #print(f"CreateInvoice Resp: {output}")
                     if "data" in output:
                         output = output["data"]
                     output = json.dumps(output)
@@ -876,7 +875,7 @@ class FrekiToolNode:
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListContacts":
                     output = requestList(self.api_key, "contacts")["data"]
-                    print(f"ListContacts: {output}")
+                    #print(f"ListContacts: {output}")
                     info = []
                     for contact in output:
                         info.append({
@@ -917,6 +916,7 @@ Please help the user with their accounting needs.
 The user is non-tech savvy, so please provide clear bullet list of easy to follow instructions.
 Never respond with uuidv4 values, always use reference or name instead.
 If mandatory fields are missing, please respond with the missing fields.
+Don't show optional fields, unless the user asked for it.
 By default save all BTs (Invoice, Bill, Journal) as drafts.
 """
 
