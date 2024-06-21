@@ -7,5 +7,6 @@ langchain
 langchain-core
 langchain-community
 langgraph
-langchain-google-vertexai
+langchain_openai
+langsmith
 httpx

@@ -1,10 +1,15 @@
 import streamlit as st
-from chat import start_llm_chat, system_message
 import os
+
+os.environ["LANGCHAIN_TRACING_V2"] = st.secrets["LANGCHAIN_TRACING_V2"]
+os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
+os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+
+############################################################
+from chat import start_llm_chat, system_message
 
 if "api_key" not in st.session_state:
     st.session_state.api_key = None
-
 ############################################################
 
 # Initialize the LangChain messages

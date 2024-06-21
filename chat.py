@@ -1,18 +1,19 @@
-from langchain_google_vertexai import ChatVertexAI
-import json
-import os
-import tempfile
-import base64
+#from langchain_google_vertexai import ChatVertexAI
+from langchain_openai import ChatOpenAI
+from langsmith import traceable
 from typing import ClassVar
+import json
+#import os
+#import tempfile
+#import base64
 
-temp_file_path = ""
+#temp_file_path = ""
 
-with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-    temp_file.write(base64.b64decode(os.environ["GOOGLE_JSON"]))
-    temp_file_path = temp_file.name
+#with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+#    temp_file.write(base64.b64decode(os.environ["GOOGLE_JSON"]))
+#    temp_file_path = temp_file.name
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
-
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
 
 #####################################################
 from langchain_core.tools import tool
@@ -93,6 +94,66 @@ class ListTaxProfiles(BaseModel):
     ###
     """
 
+#   Example JSON Response (delimiters are ###)
+#   ###
+#   [
+#       {
+#           "resourceId": "e0dfc6e0-ed26-4a2b-9b22-42fcf3c47ee6",
+#           "reference": "api test 51",
+#           "status": "ACTIVE",
+#           "tags": [
+#               "test"
+#           ],
+#           "valueDate": 1679987272000,
+#           "totalCreditAmount": 10,
+#           "totalDebitAmount": 10,
+#           "contactResourceId": null,
+#           "internalNotes": null,
+#           "taxInclusion": false,
+#           "taxVatApplicable": false,
+#           "type": "JOURNAL_CASHFLOW",
+#           "crossCurrency": false,
+#           "currencyCode": "SGD",
+#           "currencySymbol": "S$",
+#           "subTotalCredit": 10,
+#           "subTotalDebit": 10,
+#           "totalCreditVat": 0,
+#           "totalDebitVat": 0,
+#           "journalEntries": [
+#               {
+#                   "creditAmount": null,
+#                   "creditTaxVat": 0,
+#                   "currencyCode": "SGD",
+#                   "currencySymbol": "S$",
+#                   "crossCurrency": false,
+#                   "debitAmount": 10,
+#                   "description": null,
+#                   "journalResourceId": null,
+#                   "organizationAccountResourceId": "816032c4-315a-40a9-b245-1723d8021431",
+#                   "resourceId": "89ad4db0-b258-468a-a002-97a73bf10713",
+#                   "rateFunctionalToSource": null,
+#                   "rateSourceToFunctional": 1,
+#                   "taxProfileResourceId": null
+#               },
+#               {
+#                   "creditAmount": 10,
+#                   "creditTaxVat": 0,
+#                   "currencyCode": "SGD",
+#                   "currencySymbol": "S$",
+#                   "crossCurrency": false,
+#                   "debitAmount": null,
+#                   "description": null,
+#                   "journalResourceId": null,
+#                   "organizationAccountResourceId": "816032c4-315a-40a9-b245-1723d8021431",
+#                   "resourceId": "ff5d7926-1aeb-4005-8ac5-b97079b6ab6a",
+#                   "rateFunctionalToSource": null,
+#                   "rateSourceToFunctional": 1,
+#                   "taxProfileResourceId": null
+#               }
+#           ]
+#       }
+#   ]
+#   ###
 class ListJournals(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Journal.
 
@@ -100,67 +161,6 @@ class ListJournals(BaseModel):
       - look up a user's journal request
       - look up the journalResourceId for the 'GetJournal' function.
       - look up the journalResourceId for the 'CreateJournalEntry' function.
-
-    Example JSON Response (delimiters are ###)
-    ###
-    [
-        {
-            "resourceId": "e0dfc6e0-ed26-4a2b-9b22-42fcf3c47ee6",
-            "reference": "api test 51",
-            "status": "ACTIVE",
-            "tags": [
-                "test"
-            ],
-            "valueDate": 1679987272000,
-            "totalCreditAmount": 10,
-            "totalDebitAmount": 10,
-            "contactResourceId": null,
-            "internalNotes": null,
-            "taxInclusion": false,
-            "taxVatApplicable": false,
-            "type": "JOURNAL_CASHFLOW",
-            "crossCurrency": false,
-            "currencyCode": "SGD",
-            "currencySymbol": "S$",
-            "subTotalCredit": 10,
-            "subTotalDebit": 10,
-            "totalCreditVat": 0,
-            "totalDebitVat": 0,
-            "journalEntries": [
-                {
-                    "creditAmount": null,
-                    "creditTaxVat": 0,
-                    "currencyCode": "SGD",
-                    "currencySymbol": "S$",
-                    "crossCurrency": false,
-                    "debitAmount": 10,
-                    "description": null,
-                    "journalResourceId": null,
-                    "organizationAccountResourceId": "816032c4-315a-40a9-b245-1723d8021431",
-                    "resourceId": "89ad4db0-b258-468a-a002-97a73bf10713",
-                    "rateFunctionalToSource": null,
-                    "rateSourceToFunctional": 1,
-                    "taxProfileResourceId": null
-                },
-                {
-                    "creditAmount": 10,
-                    "creditTaxVat": 0,
-                    "currencyCode": "SGD",
-                    "currencySymbol": "S$",
-                    "crossCurrency": false,
-                    "debitAmount": null,
-                    "description": null,
-                    "journalResourceId": null,
-                    "organizationAccountResourceId": "816032c4-315a-40a9-b245-1723d8021431",
-                    "resourceId": "ff5d7926-1aeb-4005-8ac5-b97079b6ab6a",
-                    "rateFunctionalToSource": null,
-                    "rateSourceToFunctional": 1,
-                    "taxProfileResourceId": null
-                }
-            ]
-        }
-    ]
-    ###
     """
 
 class ListContacts(BaseModel):
@@ -177,6 +177,56 @@ class ListContacts(BaseModel):
     ###
     """
 
+#   Example JSON Response (delimiters are ###)
+#   ###
+#   [
+#   {
+#   "data": {
+#       "totalWithHold": null,
+#       "valueDate": 1699640400000,
+#       "billTo": null,
+#       "shipping": null,
+#       "contactResourceId": null,
+#       "terms": 0,
+#       "internalNotes": null,
+#       "invoiceNotes": null,
+#       "resourceId": "d2273efd-4698-4feb-9627-9010c59d91ae",
+#       "isTaxVATApplicable": false,
+#       "taxInclusion": false,
+#       "settings": {
+#           "itemTax": null
+#       },
+#       "status": "DRAFT",
+#       "dueDate": 1699640400000,
+#       "subTotal": 80,
+#       "totalShipping": 0,
+#       "totalVat": 0,
+#       "reference": "ai test 3",
+#       "totalAmount": 80,
+#       "currencyCode": "SGD",
+#       "currencySymbol": "S$",
+#       "tags": null,
+#       "paymentRecords": [],
+#       "attachments": [],
+#       "lineItems": [
+#           {
+#               "discount": {
+#                   "rateType": "FLAT",
+#                   "rateValue": 0
+#               },
+#               "name": "papaya",
+#               "quantity": 10,
+#               "organizationAccountResourceId": null,
+#               "unit": "",
+#               "unitPrice": 2,
+#               "resourceId": "534a79a1-cfda-414f-b640-5760f7d3456d",
+#               "itemResourceId": null,
+#               "taxProfile": null
+#           }
+#       ]
+#   }
+#   ]
+#   ###
 class ListInvoices(BaseModel):
     """Retrives a JSON array of objects. Each object is an Invoice.
 
@@ -184,88 +234,49 @@ class ListInvoices(BaseModel):
       - look up a user's invoice request
       - look up the invoiceResourceId for the 'GetInvoice' function.
       - look up the invoiceResourceId for the 'CreateInvoice' function.
-
-    Example JSON Response (delimiters are ###)
-    ###
-    [
-    {
-    "data": {
-        "totalWithHold": null,
-        "valueDate": 1699640400000,
-        "billFrom": {
-            "name": "Juan_Ortega_Org_SG",
-            "taxId": null,
-            "addresses": [
-                {
-                    "addressLine1": "test",
-                    "addressLine2": "",
-                    "addressType": "BILLING",
-                    "city": "singapore",
-                    "country": "SG",
-                    "postalCode": "12345",
-                    "state": "singapore"
-                }
-            ]
-        },
-        "billTo": null,
-        "shipping": null,
-        "contactResourceId": null,
-        "terms": 0,
-        "internalNotes": null,
-        "invoiceNotes": null,
-        "resourceId": "d2273efd-4698-4feb-9627-9010c59d91ae",
-        "isTaxVATApplicable": false,
-        "taxInclusion": false,
-        "settings": {
-            "itemTax": null
-        },
-        "status": "DRAFT",
-        "dueDate": 1699640400000,
-        "subTotal": 80,
-        "totalShipping": 0,
-        "totalVat": 0,
-        "reference": "ai test 3",
-        "totalAmount": 80,
-        "currencyCode": "SGD",
-        "currencySymbol": "S$",
-        "tags": null,
-        "paymentRecords": [],
-        "attachments": [],
-        "lineItems": [
-            {
-                "discount": {
-                    "rateType": "FLAT",
-                    "rateValue": 0
-                },
-                "name": "papaya",
-                "quantity": 10,
-                "organizationAccountResourceId": null,
-                "unit": "",
-                "unitPrice": 2,
-                "resourceId": "534a79a1-cfda-414f-b640-5760f7d3456d",
-                "itemResourceId": null,
-                "taxProfile": null
-            },
-            {
-                "discount": {
-                    "rateType": "FLAT",
-                    "rateValue": 0
-                },
-                "name": "oranges",
-                "quantity": 20,
-                "organizationAccountResourceId": null,
-                "unit": "",
-                "unitPrice": 3,
-                "resourceId": "16dac8b9-9494-4ab6-96e4-3b38efcde1a2",
-                "itemResourceId": null,
-                "taxProfile": null
-            }
-        ]
-    }
-    ]
-    ###
     """
 
+#   Example JSON Response (delimiters are ###)
+#   ###
+#   [
+#    {
+#       "isTaxWithholdApplicable": null,
+#       "reference": "api test 22",
+#       "dueDate": 1784749751000,
+#       "taxInclusion": false,
+#       "contactResourceId": "f5f54b02-9a7a-4859-8f80-5eadb26db5d5",
+#       "terms": 30,
+#       "internalNotes": null,
+#       "resourceId": "405cbdd1-0547-4cb3-966d-57d4c3f46b20",
+#       "vatSupplierFxRate": null,
+#       "valueDate": 1684749751000,
+#       "status": "DRAFT",
+#       "isTaxVATApplicable": false,
+#       "currencySymbol": "S$",
+#       "currencyCode": "SGD",
+#       "subTotal": 0,
+#       "totalVat": 0,
+#       "totalAmount": 0,
+#       "totalWithHold": null,
+#       "paymentRecords": [],
+#       "lineItems": [
+#           {
+#               "discount": {
+#                   "rateType": "FLAT",
+#                   "rateValue": 0
+#               },
+#               "name": "someitem",
+#               "quantity": 1,
+#               "organizationAccountResourceId": null,
+#               "taxProfile": null,
+#               "unit": "",
+#               "unitPrice": 0,
+#               "resourceId": "d3b95410-7a5a-4547-bdca-a16ef2d81232",
+#               "itemResourceId": null
+#           }
+#       ]
+#   ]
+#   ###
 class ListBills(BaseModel):
     """Retrives a JSON array of objects. Each object is an Bill.
 
@@ -273,51 +284,6 @@ class ListBills(BaseModel):
       - look up a user's bill request
       - look up the billResourceId for the 'GetBill' function.
       - look up the billResourceId for the 'CreateBill' function.
-
-    Example JSON Response (delimiters are ###)
-    ###
-    [
-     {
-        "isTaxWithholdApplicable": null,
-        "settings": {
-            "itemTax": null
-        },
-        "reference": "api test 22",
-        "dueDate": 1784749751000,
-        "taxInclusion": false,
-        "contactResourceId": "f5f54b02-9a7a-4859-8f80-5eadb26db5d5",
-        "terms": 30,
-        "internalNotes": null,
-        "resourceId": "405cbdd1-0547-4cb3-966d-57d4c3f46b20",
-        "vatSupplierFxRate": null,
-        "valueDate": 1684749751000,
-        "status": "DRAFT",
-        "isTaxVATApplicable": false,
-        "currencySymbol": "S$",
-        "currencyCode": "SGD",
-        "subTotal": 0,
-        "totalVat": 0,
-        "totalAmount": 0,
-        "totalWithHold": null,
-        "paymentRecords": [],
-        "lineItems": [
-            {
-                "discount": {
-                    "rateType": "FLAT",
-                    "rateValue": 0
-                },
-                "name": "someitem",
-                "quantity": 1,
-                "organizationAccountResourceId": null,
-                "taxProfile": null,
-                "unit": "",
-                "unitPrice": 0,
-                "resourceId": "d3b95410-7a5a-4547-bdca-a16ef2d81232",
-                "itemResourceId": null
-            }
-        ]
-    ]
-    ###
     """
 
 class GetBill(BaseModel):
@@ -333,9 +299,6 @@ class GetBill(BaseModel):
     {
     "data": {
         "isTaxWithholdApplicable": null,
-        "settings": {
-            "itemTax": null
-        },
         "reference": "api test 22",
         "dueDate": 1784749751000,
         "taxInclusion": false,
@@ -375,20 +338,53 @@ class GetBill(BaseModel):
       }
     }
     ###
-
-    Example of a failed JSON response (delimiters are ###)
-    ###
-    {
-    "error": {
-        "error_type": "not_found",
-        "errors": [
-            "Bill not found"
-        ]
-      }
-    }
-    ###
     """
 
+#   Example of a successful JSON response (delimiters are ###)
+#   ###
+#   {
+#   "data": {
+#       "totalWithHold": null,
+#       "valueDate": 1699640400000,
+#       "billTo": null,
+#       "shipping": null,
+#       "contactResourceId": null,
+#       "terms": 0,
+#       "internalNotes": null,
+#       "invoiceNotes": null,
+#       "resourceId": "d2273efd-4698-4feb-9627-9010c59d91ae",
+#       "isTaxVATApplicable": false,
+#       "taxInclusion": false,
+#       "status": "DRAFT",
+#       "dueDate": 1699640400000,
+#       "subTotal": 80,
+#       "totalShipping": 0,
+#       "totalVat": 0,
+#       "reference": "ai test 3",
+#       "totalAmount": 80,
+#       "currencyCode": "SGD",
+#       "currencySymbol": "S$",
+#       "tags": null,
+#       "paymentRecords": [],
+#       "attachments": [],
+#       "lineItems": [
+#           {
+#               "discount": {
+#                   "rateType": "FLAT",
+#                   "rateValue": 0
+#               },
+#               "name": "papaya",
+#               "quantity": 10,
+#               "organizationAccountResourceId": null,
+#               "unit": "",
+#               "unitPrice": 2,
+#               "resourceId": "534a79a1-cfda-414f-b640-5760f7d3456d",
+#               "itemResourceId": null,
+#               "taxProfile": null
+#           }
+#       ]
+#   }
+#   ###
 class GetInvoice(BaseModel):
     """Retrieves a JSON object. The object is Invoice data.
 
@@ -396,98 +392,6 @@ class GetInvoice(BaseModel):
       - look up a user's invoice request
       - look up the invoiceResourceId for the 'GetInvoice' function.
       - look up the invoiceResourceId for the 'CreateInvoice' function.
-
-    Example of a successful JSON response (delimiters are ###)
-    ###
-    {
-    "data": {
-        "totalWithHold": null,
-        "valueDate": 1699640400000,
-        "billFrom": {
-            "name": "Juan_Ortega_Org_SG",
-            "taxId": null,
-            "addresses": [
-                {
-                    "addressLine1": "test",
-                    "addressLine2": "",
-                    "addressType": "BILLING",
-                    "city": "singapore",
-                    "country": "SG",
-                    "postalCode": "12345",
-                    "state": "singapore"
-                }
-            ]
-        },
-        "billTo": null,
-        "shipping": null,
-        "contactResourceId": null,
-        "terms": 0,
-        "internalNotes": null,
-        "invoiceNotes": null,
-        "resourceId": "d2273efd-4698-4feb-9627-9010c59d91ae",
-        "isTaxVATApplicable": false,
-        "taxInclusion": false,
-        "settings": {
-            "itemTax": null
-        },
-        "status": "DRAFT",
-        "dueDate": 1699640400000,
-        "subTotal": 80,
-        "totalShipping": 0,
-        "totalVat": 0,
-        "reference": "ai test 3",
-        "totalAmount": 80,
-        "currencyCode": "SGD",
-        "currencySymbol": "S$",
-        "tags": null,
-        "paymentRecords": [],
-        "attachments": [],
-        "lineItems": [
-            {
-                "discount": {
-                    "rateType": "FLAT",
-                    "rateValue": 0
-                },
-                "name": "papaya",
-                "quantity": 10,
-                "organizationAccountResourceId": null,
-                "unit": "",
-                "unitPrice": 2,
-                "resourceId": "534a79a1-cfda-414f-b640-5760f7d3456d",
-                "itemResourceId": null,
-                "taxProfile": null
-            },
-            {
-                "discount": {
-                    "rateType": "FLAT",
-                    "rateValue": 0
-                },
-                "name": "oranges",
-                "quantity": 20,
-                "organizationAccountResourceId": null,
-                "unit": "",
-                "unitPrice": 3,
-                "resourceId": "16dac8b9-9494-4ab6-96e4-3b38efcde1a2",
-                "itemResourceId": null,
-                "taxProfile": null
-            }
-        ]
-    }
-    ###
-
-    Example of a failed JSON response (delimiters are ###)
-    ###
-    {
-    "error": {
-        "error_type": "not_found",
-        "errors": [
-            "Invoice not found"
-        ]
-      }
-    }
-    ###
-}
-    
     """
     resourceId: str = Field(..., description="Invoice Resource Id, string format")
 
@@ -753,6 +657,30 @@ class CreateJournalEntry(BaseModel):
     exchangeRate: float = Field(None, description="Journal Entry exchange rate, must be in decimal format")
     taxProfileResourceId: str = Field(None, description="Journal Entry taxResourceId, uuidv4 format")
 
+#   Example (delimiters are ###)
+#   ###
+#   {
+#   "reference": "api test 65",
+#   "valueDate": 1679987272000,
+#   "saveAsDraft": true,
+#   "journalEntries": [
+#       {
+#           "accountResourceId": "610a9b0f-9117-4f0b-a5c2-f34013c76c5a",
+#           "amount": 10.0,
+#           "type": "DEBIT",
+#           "taxProfileResourceId": "48d34c6b-1b20-4a6a-a366-3d380a1679e9",
+#           "exchangeRate": 0.8
+#       },{
+#           "accountResourceId": "610a9b0f-9117-4f0b-a5c2-f34013c76c5a",
+#           "amount": 10.0,
+#           "type": "CREDIT",
+#           "taxProfileResourceId": "48d34c6b-1b20-4a6a-a366-3d380a1679e9"
+#       }
+#   ],
+#   "taxInclusion": false,
+#   "taxVatApplicable": true
+#   }
+#   ###
 class CreateJournal(BaseModel):
     """Create a Journal.
 
@@ -766,31 +694,6 @@ class CreateJournal(BaseModel):
     - contact resource id (optional, lookup the contact resource id by retrieving the list of contacts using the 'ListContacts' function.)
 
     If successful please respond with the reference.
-
-    Example (delimiters are ###)
-    ###
-    {
-    "reference": "api test 65",
-    "valueDate": 1679987272000,
-    "saveAsDraft": true,
-    "journalEntries": [
-        {
-            "accountResourceId": "610a9b0f-9117-4f0b-a5c2-f34013c76c5a",
-            "amount": 10.0,
-            "type": "DEBIT",
-            "taxProfileResourceId": "48d34c6b-1b20-4a6a-a366-3d380a1679e9",
-            "exchangeRate": 0.8
-        },{
-            "accountResourceId": "610a9b0f-9117-4f0b-a5c2-f34013c76c5a",
-            "amount": 10.0,
-            "type": "CREDIT",
-            "taxProfileResourceId": "48d34c6b-1b20-4a6a-a366-3d380a1679e9"
-        }
-    ],
-    "taxInclusion": false,
-    "taxVatApplicable": true
-    }
-    ###
     """
     reference: str = Field(..., description="Journal reference, this is a mandatory field, string format")
     valueDate: int = Field(..., description="Journal value Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, this is mandatory field, integer format")
@@ -802,6 +705,7 @@ class CreateJournal(BaseModel):
     taxInclusion: bool = Field(None, description="Include Tax for Journal, boolean type")
     taxVatApplicable: bool = Field(None, description="Is Tax Applicable in Journal? boolean type")
     journalEntries: list[CreateJournalEntry] = Field(..., description="Journal Entries json array, this is this is mandatory and minimum 2 entries required, one must be CREDIT and the other DEBIT, format array")
+
 #####################################################
 import json
 from langchain_core.messages import ToolMessage
@@ -937,14 +841,16 @@ tools = [
     CreateJournal, ListJournals, CreateContact
 ]
 
-def start_llm_chat(api_key: str):
-    llm = ChatVertexAI(model="gemini-1.5-pro", temperature=0.2)
+def start_llm_chat(freki_api_key: str):
+    #llm = ChatVertexAI(model="gemini-1.5-pro", temperature=0.2)
+    llm = llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
     llm_with_tools = llm.bind_tools(tools)
 
+    @traceable(run_type="llm")
     def chatbot(state: State):
         return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
-    tool_node = FrekiToolNode(api_key)
+    tool_node = FrekiToolNode(freki_api_key)
     graph_builder = StateGraph(State)
     graph_builder.add_node("chatbot", chatbot)
     graph_builder.add_node("tools", tool_node)
