@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import base64
 
 os.environ["LANGCHAIN_TRACING_V2"] = st.secrets["LANGCHAIN_TRACING_V2"]
 os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
@@ -11,28 +12,47 @@ from chat import start_llm_chat, system_message
 if "api_key" not in st.session_state:
     st.session_state.api_key = None
 ############################################################
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 
 # Initialize the LangChain messages
-def convert_to_langchain() -> list[tuple[str, str]]:
-    msg = [("system", system_message)]
+def get_chat_history() -> list[BaseMessage]:
+    msg = [SystemMessage(content="You are a helpful assistant accountant.")]
     for m in st.session_state.messages[2:]:
-        msg.append((m["role"], m["content"]))
+        msg.append(m)
     return msg
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello, please enter your API key on the left."},
-        {"role": "assistant", "content": "How can I help you today?"},
+        AIMessage("Hello, please enter your API key on the left."),
+        AIMessage("How can I help you today?"),
     ]
 
 for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+    content = []
+    if isinstance(msg.content, str):
+        content.append(msg.content)
+    else:
+        for c in msg.content:
+            if c["type"] == "text":
+                content.append(c["text"])
+    st.chat_message(msg.type).write(','.join(content))
+
+# Initialize uploaded files
+if "already_uploaded_files" not in st.session_state:
+    st.session_state["already_uploaded_files"] = []
+
+def add_uploaded_file(files):
+    for f in files:
+        st.session_state["already_uploaded_files"].append(f.name)
+
+uploaded_files = None
 
 with st.sidebar:
     st.title("Jaz AI")
     st.subheader("AI Interface for Jaz")
     st.text_input('API_KEY', key="api_key")
+    uploaded_files = st.file_uploader("Attach a file to request", type=["png", "jpg"], accept_multiple_files=True)
 
 graph = start_llm_chat(st.session_state.api_key)
 
@@ -48,23 +68,37 @@ if prompt := st.chat_input():
     if prompt != "": #and not st.session_state['waiting_for_assistant']:
         #st.session_state['waiting_for_assistant'] = True
 
-        st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
-        messages = convert_to_langchain()
+        if uploaded_files is None:
+            st.session_state.messages.append(HumanMessage(content=prompt))
+        # Handle Uploads
+        else:
+            content = [{"type": "text", "text": prompt}]
+            uploaded_files = [f for f in uploaded_files if f.name not in st.session_state["already_uploaded_files"]]
+            #print(f"Uploaded Files: {uploaded_files}")
+            for uploaded_file in uploaded_files:
+                bytes_data = base64.b64encode(uploaded_file.read()).decode("utf-8")
+                content.append({"type": "image_url", "image_url": {"url": f"data:{uploaded_file.type};base64,{bytes_data}"}})
+            st.session_state.messages.append(HumanMessage(content=content))
+
         assistant = []
 
         try:
-            for event in graph.stream({"messages": messages}, {"recursion_limit": 25, "max_concurrency": 25}):
+            for event in graph.stream({"messages": get_chat_history()}, {"recursion_limit": 25, "max_concurrency": 25}):
                 if "chatbot" in event:
                     for msg in event["chatbot"]["messages"]:
                         if msg.content != "":
                             assistant.append(msg.content)
                             st.chat_message("assistant").markdown(msg.content)
+            uploaded_file = None
         except Exception as e:
             assistant.append(f"Error: {e}")
             st.chat_message("assistant").write(f"Error: {e}")
             raise e 
         finally:
-            st.session_state.messages.append({"role": "assistant", "content": ', '.join(assistant)})
+            st.session_state.messages.append(AIMessage(content=', '.join(assistant)))
+            if uploaded_files is not None:
+                add_uploaded_file(uploaded_files)
+            uploaded_files = None
             #st.session_state['waiting_for_assistant'] = False
