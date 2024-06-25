@@ -37,6 +37,15 @@ def requestList(api_key: str, bt: str):
         headers={"API_KEY": api_key},
     )
     return response.json()
+  
+def requestSearch(api_key: str, bt: str, *, query: str, queryBy: str):
+    """Searches a query to retrieve a list of data from an API using REST GET."""
+    #print(f"*****\nQuery: {query}\nQuery By: {queryBy}\n******")
+    response = requests.get(
+        f"{FREKI_URL}/api/v1/{bt}?query={query}&query_by={queryBy}",
+        headers={"API_KEY": api_key},
+    )
+    return response.json()
 
 def requestPost(api_key: str, bt: str, payload: str):
     """Retrieve data from an API using REST POST with payload."""
@@ -177,6 +186,21 @@ class ListContacts(BaseModel):
     ###
     """
 
+class SearchContacts(BaseModel):
+    """Search a contact by name and retrieve a JSON array of objects. Each object is a Contact.
+
+    Can be used to:
+      - look up a user's contact request
+      - look up the contactResourceId for the 'CreateInvoice' function.
+      - look up the contactResourceId for the 'CreateBill' function.
+
+    Example JSON Response (delimiters are ###)
+    ###
+    [{"name": "John", "email": "john@example.com", "contactResourceId": "33988ec3-708f-48ad-bccb-6bbbd40d5127", "customer": true, "supplier": true}]
+    ###
+    """
+    name: str = Field(..., description="Contact name, string format")
+
 #   Example JSON Response (delimiters are ###)
 #   ###
 #   [
@@ -236,6 +260,23 @@ class ListInvoices(BaseModel):
       - look up the invoiceResourceId for the 'CreateInvoice' function.
     """
 
+class SearchInvoices(BaseModel):
+    """Search Invoices to retrieve a JSON array of objects. Each object is an Invoice.
+
+    Can search by:
+      - reference
+      - contact name
+      - contact resource id
+
+    Can be used to:
+      - look up a user's invoice request
+      - look up the invoiceResourceId for the 'GetInvoice' function.
+      - look up the invoiceResourceId for the 'CreateInvoice' function.
+    """
+    reference: str = Field(None, description="Search by reference, string format")
+    contactName: str = Field(None, description="Search by contact name, string format")
+    contactResourceId: str = Field(None, description="Search by contact resource id, uuidv4 format")
+
 #   Example JSON Response (delimiters are ###)
 #   ###
 #   [
@@ -285,6 +326,23 @@ class ListBills(BaseModel):
       - look up the billResourceId for the 'GetBill' function.
       - look up the billResourceId for the 'CreateBill' function.
     """
+
+class SearchBills(BaseModel):
+    """Search Bills to retrieve a JSON array of objects. Each object is an Bill.
+
+    Can search by:
+      - reference
+      - contact name
+      - contact resource id
+
+    Can used to:
+      - look up a user's bill request
+      - look up the billResourceId for the 'GetBill' function.
+      - look up the billResourceId for the 'CreateBill' function.
+    """
+    reference: str = Field(None, description="Search by reference, string format")
+    contactName: str = Field(None, description="Search by contact name, string format")
+    contactResourceId: str = Field(None, description="Search by contact resource id, uuidv4 format")
 
 class GetBill(BaseModel):
     """Retrieves a JSON object. The object is Bill data.
@@ -778,7 +836,9 @@ class FrekiToolNode:
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListContacts":
-                    output = requestList(self.api_key, "contacts")["data"]
+                    output = requestList(self.api_key, "contacts")
+                    if "data" in output:
+                        output = output["data"]
                     #print(f"ListContacts: {output}")
                     info = []
                     for contact in output:
@@ -792,25 +852,74 @@ class FrekiToolNode:
                     output = json.dumps(info)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListInvoices":
-                    output = requestList(self.api_key, "invoices")["data"]
+                    output = requestList(self.api_key, "invoices")
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListBills":
-                    output = requestList(self.api_key, "bills")["data"]
+                    output = requestList(self.api_key, "bills")
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
                 case "ListChartOfAccounts":
-                    output = requestList(self.api_key, "chart-of-accounts")["data"]
+                    output = requestList(self.api_key, "chart-of-accounts")
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))   
                 case "ListTaxProfiles":
-                    output = requestList(self.api_key, "vat-profiles")["data"]
+                    output = requestList(self.api_key, "vat-profiles")
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"])) 
                 case "ListJournals":
-                    output = requestList(self.api_key, "journals")["data"]
+                    output = requestList(self.api_key, "journals")
+                    if "data" in output:
+                        output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"])) 
+                case "SearchContacts":
+                    output = requestSearch(self.api_key, "contacts", query=tool_call["args"]["name"], queryBy="name")
+                    #print(f"SearchContacts: {output}")
+                    if "data" in output:
+                        output = output["data"]
+                    output = json.dumps(output)
+                    outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
+                case "SearchBills":
+                    q = ""
+                    qb = "reference"
+                    if "reference" in tool_call["args"]:
+                        q = tool_call["args"]["reference"]
+                    if "contactName" in tool_call["args"]:
+                        q = tool_call["args"]["contactName"]
+                        qb = "contact_name"
+                    if "contactResourceId" in tool_call["args"]:
+                        q = tool_call["args"]["contactResourceId"]
+                        qb = "contact_resource_id"
+                    output = requestSearch(self.api_key, "bills", query=q, queryBy=qb)
+                    if "data" in output:
+                        output = output["data"]
+                    output = json.dumps(output)
+                    outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
+                case "SearchInvoices":
+                    q = ""
+                    qb = "reference"
+                    if "reference" in tool_call["args"]:
+                        q = tool_call["args"]["reference"]
+                    if "contactName" in tool_call["args"]:
+                        q = tool_call["args"]["contactName"]
+                        qb = "contact_name"
+                    if "contactResourceId" in tool_call["args"]:
+                        q = tool_call["args"]["contactResourceId"]
+                        qb = "contact_resource_id"
+                    output = requestSearch(self.api_key, "invoices", query=q, queryBy=qb)
+                    if "data" in output:
+                        output = output["data"]
+                    output = json.dumps(output)
+                    outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
         return {"messages": outputs}
 #####################################################
 
@@ -838,7 +947,8 @@ class State(TypedDict):
 tools = [
     CreateInvoice, CreateBill, GetInvoice, ListContacts, ListInvoices,
     ListBills, ListChartOfAccounts, ListTaxProfiles,
-    CreateJournal, ListJournals, CreateContact
+    CreateJournal, ListJournals, CreateContact,
+    SearchContacts, SearchBills, SearchInvoices
 ]
 
 def start_llm_chat(freki_api_key: str):
