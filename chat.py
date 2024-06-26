@@ -42,7 +42,7 @@ def requestSearch(api_key: str, bt: str, *, query: str, queryBy: str):
     """Searches a query to retrieve a list of data from an API using REST GET."""
     #print(f"*****\nQuery: {query}\nQuery By: {queryBy}\n******")
     response = requests.get(
-        f"{FREKI_URL}/api/v1/{bt}?query={query}&query_by={queryBy}",
+        f"{FREKI_URL}/api/v1/{bt}?query={query}&queryBy={queryBy}",
         headers={"API_KEY": api_key},
     )
     return response.json()
