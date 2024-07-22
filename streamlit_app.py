@@ -7,7 +7,7 @@ os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 ############################################################
-from chat import start_llm_chat, system_message
+from chat import start_llm_chat, system_message, Attachment
 
 if "api_key" not in st.session_state:
     st.session_state.api_key = None
@@ -36,6 +36,7 @@ for msg in st.session_state.messages:
         for c in msg.content:
             if c["type"] == "text":
                 content.append(c["text"])
+                break
     st.chat_message(msg.type).write(','.join(content))
 
 # Initialize uploaded files
@@ -51,8 +52,10 @@ uploaded_files = None
 with st.sidebar:
     st.title("Jaz AI")
     st.subheader("AI Interface for Jaz")
-    st.text_input('API_KEY', key="api_key")
-    uploaded_files = st.file_uploader("Attach a file to request", type=["png", "jpg"], accept_multiple_files=True)
+    st.text_input('API_KEY', key="api_key", type="password")
+    uploaded_files = st.file_uploader("Attach a file to request",
+        accept_multiple_files=True,
+        label_visibility="collapsed")
 
 graph = start_llm_chat(st.session_state.api_key)
 
@@ -70,6 +73,8 @@ if prompt := st.chat_input():
 
         st.chat_message("user").write(prompt)
 
+        uploaded_attachments = []
+
         if uploaded_files is None:
             st.session_state.messages.append(HumanMessage(content=prompt))
         # Handle Uploads
@@ -78,14 +83,21 @@ if prompt := st.chat_input():
             uploaded_files = [f for f in uploaded_files if f.name not in st.session_state["already_uploaded_files"]]
             #print(f"Uploaded Files: {uploaded_files}")
             for uploaded_file in uploaded_files:
-                bytes_data = base64.b64encode(uploaded_file.read()).decode("utf-8")
-                content.append({"type": "image_url", "image_url": {"url": f"data:{uploaded_file.type};base64,{bytes_data}"}})
+                match uploaded_file.type:
+                    case "image/png", "image/jpeg", "image/jpg":
+                        bytes_data = base64.b64encode(uploaded_file.read()).decode("utf-8")
+                        content.append({"type": "image_url", "image_url": {"url": f"data:{uploaded_file.type};base64,{bytes_data}"}})
+                    case _:
+                        uploaded_attachments.append(Attachment(name=uploaded_file.name, type=uploaded_file.type, data=uploaded_file))
+                        content.append({"type": "text", "text": f"Attached file: {uploaded_file.name}, type: {uploaded_file.type}"})
             st.session_state.messages.append(HumanMessage(content=content))
 
         assistant = []
 
         try:
-            for event in graph.stream({"messages": get_chat_history()}, {"recursion_limit": 25, "max_concurrency": 25}):
+            for event in graph.stream(
+                {"messages": get_chat_history(), "files": uploaded_attachments},
+                {"recursion_limit": 25, "max_concurrency": 25}):
                 if "chatbot" in event:
                     for msg in event["chatbot"]["messages"]:
                         if msg.content != "":

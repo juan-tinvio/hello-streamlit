@@ -2,10 +2,12 @@
 from langchain_openai import ChatOpenAI
 from langsmith import traceable
 from typing import ClassVar
+from io import StringIO, BufferedIOBase
 import json
 #import os
 #import tempfile
 #import base64
+from langchain.agents import AgentExecutor, create_openai_functions_agent
 
 #temp_file_path = ""
 
@@ -56,6 +58,25 @@ def requestPost(api_key: str, bt: str, payload: str):
         json=payload,
     )
     return response.json()
+
+def requestPostForm(api_key: str, bt: str, files: dict):
+    """Retrieve data from an API using REST POST Form with payload."""
+    #print(f"*****\nPayload: {payload}\n******")
+    response = requests.post(
+        f"{FREKI_URL}/api/v1/{bt}",
+        headers={"API_KEY": api_key},
+        files=files,
+    )
+    return response.json()
+
+class CreateBusinessTransactionFromAttachment(BaseModel):
+    """Create a new business transaction from an attachment.
+    When a user wants to create a new invoice or bill, they can attach a file to the request.
+    This tool can create an invoice or bill with the following types of attachments: EML, HEIC, JPEG, JPG, PDF, PNG, XLS, XLSX.
+    You can assume the user uploaded the correct attachment.
+    """
+    businessTransactionType: str = Field(..., description="Business transaction type, enum must be: INVOICE or BILL, mandatory field, string format")
+    sourceFile: str = Field(..., description="Source file to create the business transaction from, mandatory field, string format")
 
 class ListChartOfAccounts(BaseModel):
     """Retrieves a JSON array of objects. Each object is a Chart of Account.
@@ -539,7 +560,6 @@ class CreateBill(BaseModel):
     dueDate: int = Field(..., description="Bill dueDate Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
     terms: int = Field(..., description="Bill terms, each term is how many days until due date, must be an integer of one: 0,7,15,30,45,60")
     tags: list[str] = Field(None, description="Bill tags, array of strings format")
-    invoiceNotes: str = Field(None, description="Bill notes, string format")
     internalNotes: str = Field(None, description="Bill internal notes, string format")
     lineItems: list[CreateBTLineItem] = Field(None, description="Bill Line Items, array of objects format")
     saveAsDraft: bool = Field(..., description="Save the Bill as a draft?, this is mandatory and required, default is true, boolean type")
@@ -755,7 +775,6 @@ class CreateJournal(BaseModel):
     """
     reference: str = Field(..., description="Journal reference, this is a mandatory field, string format")
     valueDate: int = Field(..., description="Journal value Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, this is mandatory field, integer format")
-    dueDate: int = Field(..., description="Journal dueDate Date in epoch milliseconds, convert the date given from ther user to epoch milliseconds, never tell the user to input in epoch milliseconds, integer format")
     tags: list[str] = Field(None, description="Journal tags, array of strings format")
     contactResourceId: str = Field(None, description="The contact resource id, retrieve the contactResourceId using 'ListJournals', uuidv4 format type")
     internalNotes: str = Field(None, description="Journal internal notes, string format")
@@ -920,6 +939,24 @@ class FrekiToolNode:
                         output = output["data"]
                     output = json.dumps(output)
                     outputs.append(ToolMessage(output, tool_call_id=tool_call["id"]))
+                case "CreateBusinessTransactionFromAttachment":
+                    print("CreateBusinessTransactionFromAttachment was triggered")
+                    sourceFile = tool_call["args"]["sourceFile"]
+                    output=[]
+                    for file in inputs.get("files", []):
+                        if file.name != sourceFile:
+                            continue
+                        print(f"File: {file.name}")
+                        attach = {
+                            "businessTransactionType": (None, tool_call["args"]["businessTransactionType"]),
+                            "sourceType": (None, "FILE"),
+                            "sourceFile": (file.name, file.data, file.type)
+                        }
+                        req = requestPostForm(self.api_key, "magic/createBusinessTransactionFromAttachment", attach)
+                        print(f"Response: {req}")
+                        output.append(f"File: {file.name}, Response: {json.dumps(req)}")
+                    output = "\n".join(output)
+                    outputs.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
         return {"messages": outputs}
 #####################################################
 
@@ -941,14 +978,26 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph import StateGraph
 import operator
 
+class Attachment:
+    name: str
+    type: str
+    data: BufferedIOBase
+
+    def __init__(self, *, name: str, type: str, data: BufferedIOBase):
+        self.name = name
+        self.type = type
+        self.data = data
+
 class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
+    files: Sequence[Attachment]
 
 tools = [
     CreateInvoice, CreateBill, GetInvoice, ListContacts, ListInvoices,
     ListBills, ListChartOfAccounts, ListTaxProfiles,
     CreateJournal, ListJournals, CreateContact,
-    SearchContacts, SearchBills, SearchInvoices
+    SearchContacts, SearchBills, SearchInvoices,
+    CreateBusinessTransactionFromAttachment
 ]
 
 def start_llm_chat(freki_api_key: str):
@@ -958,7 +1007,10 @@ def start_llm_chat(freki_api_key: str):
 
     @traceable(run_type="llm")
     def chatbot(state: State):
-        return {"messages": [llm_with_tools.invoke(state["messages"])]}
+        return {
+            "messages": [llm_with_tools.invoke(state["messages"])],
+            "files": state["files"]
+        }
 
     tool_node = FrekiToolNode(freki_api_key)
     graph_builder = StateGraph(State)
