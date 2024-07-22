@@ -54,6 +54,7 @@ with st.sidebar:
     st.subheader("AI Interface for Jaz")
     st.text_input('API_KEY', key="api_key", type="password")
     uploaded_files = st.file_uploader("Attach a file to request",
+        type=["png", "jpg", "jpeg", "pdf", "xls", "xlsx", "eml", "heic"],
         accept_multiple_files=True,
         label_visibility="collapsed")
 
@@ -83,13 +84,12 @@ if prompt := st.chat_input():
             uploaded_files = [f for f in uploaded_files if f.name not in st.session_state["already_uploaded_files"]]
             #print(f"Uploaded Files: {uploaded_files}")
             for uploaded_file in uploaded_files:
-                match uploaded_file.type:
-                    case "image/png", "image/jpeg", "image/jpg":
-                        bytes_data = base64.b64encode(uploaded_file.read()).decode("utf-8")
-                        content.append({"type": "image_url", "image_url": {"url": f"data:{uploaded_file.type};base64,{bytes_data}"}})
-                    case _:
-                        uploaded_attachments.append(Attachment(name=uploaded_file.name, type=uploaded_file.type, data=uploaded_file))
-                        content.append({"type": "text", "text": f"Attached file: {uploaded_file.name}, type: {uploaded_file.type}"})
+                uploaded_attachments.append(Attachment(name=uploaded_file.name, type=uploaded_file.type, data=uploaded_file))
+                content.append({"type": "text", "text": f"Attached file: {uploaded_file.name}, type: {uploaded_file.type}"})
+                #match uploaded_file.type:
+                   #case "image/png", "image/jpeg", "image/jpg":
+                   #    bytes_data = base64.b64encode(uploaded_file.read()).decode("utf-8")
+                   #    content.append({"type": "image_url", "image_url": {"url": f"data:{uploaded_file.type};base64,{bytes_data}"}})
             st.session_state.messages.append(HumanMessage(content=content))
 
         assistant = []
